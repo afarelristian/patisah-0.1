@@ -265,6 +265,7 @@
             <button class="tab-btn" onclick="openTab('scan')">📷 Scan QR</button>
             <button class="tab-btn" onclick="openTab('dashboard')">📊 Dashboard</button>
             <button class="tab-btn" onclick="openTab('list')">📋 Daftar Hadir</button>
+            <button class="tab-btn" onclick="clearAllData()">🗑️ Clear Data</button>
         </div>
 
         <!-- Tab Registrasi -->
@@ -380,8 +381,29 @@
         let attendance = [];
         let html5QrCode = null;
 
-        // Load data dari memory saat halaman dibuka
+        function loadDataFromStorage() {
+            const savedParticipants = localStorage.getItem('participants');
+            const savedAttendance = localStorage.getItem('attendance');
+            
+            if (savedParticipants) {
+                participants = JSON.parse(savedParticipants);
+                console.log('Loaded participants:', participants.length);
+            }
+            
+            if (savedAttendance) {
+                attendance = JSON.parse(savedAttendance);
+                console.log('Loaded attendance:', attendance.length);
+            }
+        }
+
+        function saveDataToStorage() {
+            localStorage.setItem('participants', JSON.stringify(participants));
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            console.log('Data saved to localStorage');
+        }
+
         window.addEventListener('load', () => {
+            loadDataFromStorage();
             updateDashboard();
             loadAttendanceTable();
         });
@@ -439,6 +461,8 @@
             
             // Simpan ke array
             participants.push(participant);
+            
+            saveDataToStorage();
             
             // Generate QR Code
             generateQRCode(participant);
@@ -555,6 +579,8 @@
             participant.attended = true;
             participant.attendedAt = attendanceRecord.attendedAt;
 
+            saveDataToStorage();
+
             showScanResult('success', `✅ Presensi berhasil!<br><strong>${participant.nama}</strong><br>Kategori: ${participant.kategori}<br>Waktu: ${formatDateTime(attendanceRecord.attendedAt)}`);
             
             updateDashboard();
@@ -602,7 +628,7 @@
                 return;
             }
 
-            tbody.innerHTML = participants.map((p, index) => `
+            tbody.innerHTML = participants.map((p, index) => ``
                 <tr>
                     <td>${index + 1}</td>
                     <td>${p.nama}</td>
@@ -651,6 +677,18 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+
+        function clearAllData() {
+            if (confirm('Apakah Anda yakin ingin menghapus semua data? Tindakan ini tidak dapat dibatalkan.')) {
+                localStorage.removeItem('participants');
+                localStorage.removeItem('attendance');
+                participants = [];
+                attendance = [];
+                updateDashboard();
+                loadAttendanceTable();
+                alert('Semua data telah dihapus!');
+            }
         }
     </script>
 </body>
