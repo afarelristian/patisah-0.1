@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Presensi QR Code</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 25px;
+            background: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        #reader {
+            max-width: 500px;
+            margin: 20px auto;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-hadir {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .btn-download {
+            background: #28a745;
+            margin-left: 10px;
+        }
+
+        .btn-download:hover {
+            background: #218838;
+        }
+
+        #scanResult {
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚽ Sistem Presensi QR Code</h1>
+            <p>Absensi Modern untuk Event & Pertandingan</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('register')">📝 Registrasi</button>
+            <button class="tab-btn" onclick="openTab('scan')">📷 Scan QR</button>
+            <button class="tab-btn" onclick="openTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="openTab('list')">📋 Daftar Hadir</button>
+        </div>
+
+        <!-- Tab Registrasi -->
+        <div id="register" class="tab-content active">
+            <h2>Registrasi Peserta</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Nama Lengkap *</label>
+                    <input type="text" id="nama" required placeholder="Masukkan nama lengkap">
+                </div>
+                <div class="form-group">
+                    <label>Nomor Identitas *</label>
+                    <input type="text" id="identitas" required placeholder="NIK/NIS/NIP">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Nomor Telepon</label>
+                    <input type="tel" id="telepon" placeholder="08xx-xxxx-xxxx">
+                </div>
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <select id="kategori">
+                        <option value="Penonton Umum">Penonton Umum</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Staff">Staff</option>
+                        <option value="Media">Media</option>
+                    </select>
+                </div>
+                <button type="submit">Generate QR Code</button>
+            </form>
+
+            <div id="qrResult" class="hidden">
+                <div class="card">
+                    <h3>QR Code Berhasil Dibuat!</h3>
+                    <p><strong>Nama:</strong> <span id="resultNama"></span></p>
+                    <p><strong>ID:</strong> <span id="resultId"></span></p>
+                    <p><strong>Kategori:</strong> <span id="resultKategori"></span></p>
+                </div>
+                <div id="qrcode"></div>
+                <div style="text-align: center;">
+                    <button onclick="downloadQR()">💾 Download QR Code</button>
+                    <button onclick="resetForm()">➕ Registrasi Baru</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Scan -->
+        <div id="scan" class="tab-content">
+            <h2>Scan QR Code</h2>
+            <p style="text-align: center; margin-bottom: 20px;">Arahkan kamera ke QR Code untuk melakukan presensi</p>
+            <div id="reader"></div>
+            <div id="scanResult"></div>
+        </div>
+
+        <!-- Tab Dashboard -->
+        <div id="dashboard" class="tab-content">
+            <h2>Dashboard Presensi</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPeserta">0</div>
+                    <div class="stat-label">Total Terdaftar</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalHadir">0</div>
+                    <div class="stat-label">Sudah Hadir</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="persentaseHadir">0%</div>
+                    <div class="stat-label">Persentase Hadir</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Presensi Terakhir</h3>
+                <div id="recentAttendance">Belum ada presensi</div>
+            </div>
+        </div>
+
+        <!-- Tab Daftar Hadir -->
+        <div id="list" class="tab-content">
+            <h2>Daftar Hadir</h2>
+            <div style="margin-bottom: 20px;">
+                <button onclick="updateDashboard()">🔄 Refresh Data</button>
+                <button class="btn-download" onclick="exportToCSV()">📥 Export CSV</button>
+            </div>
+            <table id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama</th>
+                        <th>ID</th>
+                        <th>Kategori</th>
+                        <th>Waktu Registrasi</th>
+                        <th>Status</th>
+                        <th>Waktu Hadir</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center;">Belum ada data</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let participants = [];
+        let attendance = [];
+        let html5QrCode = null;
+
+        // Load data dari memory saat halaman dibuka
+        window.addEventListener('load', () => {
+            updateDashboard();
+            loadAttendanceTable();
+        });
+
+        // Tab Navigation
+        function openTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const btns = document.querySelectorAll('.tab-btn');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            btns.forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Start scanner jika tab scan dibuka
+            if (tabName === 'scan') {
+                startScanner();
+            } else if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop();
+            }
+
+            // Update data jika tab dashboard atau list dibuka
+            if (tabName === 'dashboard' || tabName === 'list') {
+                updateDashboard();
+                loadAttendanceTable();
+            }
+        }
+
+        // Form Registration
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nama = document.getElementById('nama').value;
+            const identitas = document.getElementById('identitas').value;
+            const email = document.getElementById('email').value;
+            const telepon = document.getElementById('telepon').value;
+            const kategori = document.getElementById('kategori').value;
+            
+            // Generate unique ID
+            const uniqueId = 'PST' + Date.now();
+            
+            // Data peserta
+            const participant = {
+                id: uniqueId,
+                nama: nama,
+                identitas: identitas,
+                email: email,
+                telepon: telepon,
+                kategori: kategori,
+                registeredAt: new Date().toISOString(),
+                attended: false,
+                attendedAt: null
+            };
+            
+            // Simpan ke array
+            participants.push(participant);
+            
+            // Generate QR Code
+            generateQRCode(participant);
+            
+            // Tampilkan hasil
+            document.getElementById('resultNama').textContent = nama;
+            document.getElementById('resultId').textContent = uniqueId;
+            document.getElementById('resultKategori').textContent = kategori;
+            document.getElementById('qrResult').classList.remove('hidden');
+            document.getElementById('registerForm').style.display = 'none';
+        });
+
+        function generateQRCode(participant) {
+            // Clear previous QR
+            document.getElementById('qrcode').innerHTML = '';
+            
+            // Data untuk QR Code
+            const qrData = JSON.stringify({
+                id: participant.id,
+                nama: participant.nama,
+                kategori: participant.kategori,
+                timestamp: Date.now()
+            });
+            
+            // Generate QR
+            new QRCode(document.getElementById('qrcode'), {
+                text: qrData,
+                width: 256,
+                height: 256,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('registerForm').reset();
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('qrResult').classList.add('hidden');
+            updateDashboard();
+        }
+
+        function downloadQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'qrcode-' + document.getElementById('resultId').textContent + '.png';
+            a.click();
+        }
+
+        // QR Scanner
+        function startScanner() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                return;
+            }
+
+            html5QrCode = new Html5Qrcode("reader");
+            
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccess,
+                onScanError
+            ).catch(err => {
+                console.error("Scanner error:", err);
+                document.getElementById('scanResult').innerHTML = 
+                    '<div class="alert alert-error">Gagal mengakses kamera. Pastikan Anda memberikan izin akses kamera.</div>';
+            });
+        }
+
+        function onScanSuccess(decodedText) {
+            try {
+                const data = JSON.parse(decodedText);
+                processAttendance(data);
+            } catch (e) {
+                showScanResult('error', 'QR Code tidak valid!');
+            }
+        }
+
+        function onScanError(error) {
+            // Ignore scan errors (terlalu banyak log)
+        }
+
+        function processAttendance(data) {
+            // Cari peserta
+            const participant = participants.find(p => p.id === data.id);
+            
+            if (!participant) {
+                showScanResult('error', 'Peserta tidak terdaftar!');
+                return;
+            }
+
+            // Cek apakah sudah absen
+            const alreadyAttended = attendance.find(a => a.id === data.id);
+            
+            if (alreadyAttended) {
+                showScanResult('error', `${participant.nama} sudah melakukan presensi sebelumnya!`);
+                return;
+            }
+
+            // Simpan presensi
+            const attendanceRecord = {
+                id: participant.id,
+                nama: participant.nama,
+                kategori: participant.kategori,
+                attendedAt: new Date().toISOString()
+            };
+            
+            attendance.push(attendanceRecord);
+            participant.attended = true;
+            participant.attendedAt = attendanceRecord.attendedAt;
+
+            showScanResult('success', `✅ Presensi berhasil!<br><strong>${participant.nama}</strong><br>Kategori: ${participant.kategori}<br>Waktu: ${formatDateTime(attendanceRecord.attendedAt)}`);
+            
+            updateDashboard();
+        }
+
+        function showScanResult(type, message) {
+            const resultDiv = document.getElementById('scanResult');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            resultDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                resultDiv.innerHTML = '';
+            }, 3000);
+        }
+
+        // Dashboard
+        function updateDashboard() {
+            document.getElementById('totalPeserta').textContent = participants.length;
+            document.getElementById('totalHadir').textContent = attendance.length;
+            
+            const persentase = participants.length > 0 
+                ? Math.round((attendance.length / participants.length) * 100) 
+                : 0;
+            document.getElementById('persentaseHadir').textContent = persentase + '%';
+
+            // Recent attendance
+            const recentDiv = document.getElementById('recentAttendance');
+            if (attendance.length === 0) {
+                recentDiv.innerHTML = 'Belum ada presensi';
+            } else {
+                const recent = attendance.slice(-5).reverse();
+                recentDiv.innerHTML = recent.map(a => 
+                    `<p>✅ <strong>${a.nama}</strong> - ${formatDateTime(a.attendedAt)}</p>`
+                ).join('');
+            }
+        }
+
+        // Attendance Table
+        function loadAttendanceTable() {
+            const tbody = document.getElementById('attendanceBody');
+            
+            if (participants.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Belum ada data</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = participants.map((p, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${p.nama}</td>
+                    <td>${p.id}</td>
+                    <td>${p.kategori}</td>
+                    <td>${formatDateTime(p.registeredAt)}</td>
+                    <td>
+                        ${p.attended 
+                            ? '<span class="status-badge status-hadir">Hadir</span>' 
+                            : '<span class="status-badge">Belum Hadir</span>'
+                        }
+                    </td>
+                    <td>${p.attendedAt ? formatDateTime(p.attendedAt) : '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            if (participants.length === 0) {
+                alert('Belum ada data untuk diekspor');
+                return;
+            }
+
+            let csv = 'No,Nama,ID,Kategori,Waktu Registrasi,Status,Waktu Hadir\n';
+            
+            participants.forEach((p, index) => {
+                csv += `${index + 1},${p.nama},${p.id},${p.kategori},${formatDateTime(p.registeredAt)},${p.attended ? 'Hadir' : 'Belum Hadir'},${p.attendedAt ? formatDateTime(p.attendedAt) : '-'}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'daftar-hadir-' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+        }
+
+        // Utility Functions
+        function formatDateTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>
